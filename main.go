@@ -17,11 +17,10 @@ import (
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler"
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler/api"
 	"github.com/juliens/wasm-goexport/guest"
+	"github.com/pquerna/otp/totp"
 	_ "github.com/stealthrocket/net/http"
 	"github.com/stealthrocket/net/wasip1"
 	"golang.org/x/oauth2"
-
-	"github.com/pquerna/otp/totp"
 )
 
 func main() {
@@ -70,11 +69,11 @@ func New(config *Config) (*TraefikOIDCWasm, error) {
 				Timeout: time.Millisecond * time.Duration(3000), //nolint:mnd
 			}
 
-			return d.DialContext(ctx, "udp", config.DnsAddr)
+			return d.DialContext(ctx, "udp", config.DNSAddr)
 		},
 	}
 
-	provider, err := oidc.NewProvider(ctx, config.Provider.IssuerUrl)
+	provider, err := oidc.NewProvider(ctx, config.Provider.IssuerURL)
 	if err != nil {
 		return nil, err
 	}
@@ -112,20 +111,19 @@ func (p *TraefikOIDCWasm) handleRequest(req api.Request, resp api.Response) (nex
 	}
 	if p.verifyToken(req, resp) {
 		return true, 0
-	} else {
-		p.doRedirect(req, resp)
-		return false, 0
 	}
+	p.doRedirect(req, resp)
+	return false, 0
 }
 
-func (t *TraefikOIDCWasm) determineScheme(req api.Request) string {
+func (p *TraefikOIDCWasm) determineScheme(req api.Request) string {
 	if scheme, _ := req.Headers().Get("X-Forwarded-Proto"); scheme != "" {
 		return scheme
 	}
 	return "http"
 }
 
-func (t *TraefikOIDCWasm) determineHost(req api.Request) string {
+func (p *TraefikOIDCWasm) determineHost(req api.Request) string {
 	if host, _ := req.Headers().Get("X-Forwarded-Host"); host != "" {
 		return host
 	}
@@ -133,12 +131,12 @@ func (t *TraefikOIDCWasm) determineHost(req api.Request) string {
 }
 
 func (p *TraefikOIDCWasm) newOauth2Config(req api.Request) *oauth2.Config {
-	redirectUrl := fmt.Sprintf("%s://%s%s", p.determineScheme(req), p.determineHost(req), p.config.Endpoint.Callback)
+	redirectURL := fmt.Sprintf("%s://%s%s", p.determineScheme(req), p.determineHost(req), p.config.Endpoint.Callback)
 
 	oauth2Config := &oauth2.Config{
 		ClientID:     p.config.Provider.ClientID,
 		ClientSecret: p.config.Provider.ClientSecret,
-		RedirectURL:  redirectUrl,
+		RedirectURL:  redirectURL,
 		Endpoint:     p.provider.Endpoint(),
 		Scopes:       p.config.Provider.Scopes,
 	}
@@ -149,9 +147,9 @@ func (p *TraefikOIDCWasm) newOauth2Config(req api.Request) *oauth2.Config {
 func (p *TraefikOIDCWasm) doRedirect(req api.Request, resp api.Response) {
 	oauth2Config := p.newOauth2Config(req)
 	state, _ := totp.GenerateCodeCustom(base32.StdEncoding.EncodeToString([]byte(oauth2Config.ClientSecret)), time.Now(), p.config.Totp)
-	authCodeUrl := oauth2Config.AuthCodeURL(state)
+	authCodeURL := oauth2Config.AuthCodeURL(state)
 	SetCookie(resp, &http.Cookie{Name: p.config.Cookie.OriginPath, Value: req.GetURI(), Path: "/", HttpOnly: true})
-	Redirect(req, resp, authCodeUrl, http.StatusFound)
+	Redirect(req, resp, authCodeURL, http.StatusFound)
 }
 
 func (p *TraefikOIDCWasm) handleCallback(req api.Request, resp api.Response) error {
@@ -213,10 +211,10 @@ func (p *TraefikOIDCWasm) verifyToken(req api.Request, resp api.Response) bool {
 
 	if len(p.config.ClaimMap) > 0 {
 		claims := make(map[string]any)
-		idToken.Claims(&claims)
+		_ = idToken.Claims(&claims)
 		if handler.Host.LogEnabled(api.LogLevelDebug) {
 			bs, _ := json.Marshal(claims)
-			handler.Host.Log(api.LogLevelDebug, fmt.Sprintf("claims: %s", string(bs)))
+			handler.Host.Log(api.LogLevelDebug, "claims: "+string(bs))
 		}
 		for claimName, headerName := range p.config.ClaimMap {
 			if value, ok := claims[claimName]; ok {

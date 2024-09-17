@@ -90,6 +90,6 @@ http:
 | Name | Required | Type | Default | Description |
 |---|---|---|---|---|
 | Period | no | `uint` | `30` | The period of the TOTP token. |
-| Skew | no | `uint` | `1` | The skew of the TOTP token. |
+| Skew | no | `uint` | `0` | The skew of the TOTP token. |
 | Digest | no | `uint` | `8` | The length of the TOTP token. |
 | Algorithm | no | `string` | `"SHA1"` | The algorithm of the TOTP token. |

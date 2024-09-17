@@ -16,12 +16,12 @@ type Config struct {
 	Endpoint             EndpointConfig    `json:"endpoint"`
 	TokenAutoRefreshTime time.Duration     `json:"tokenAutoRefreshTime"`
 	Totp                 totp.ValidateOpts `json:"totp"`
-	DnsAddr              string            `json:"dnsAddr"`
+	DNSAddr              string            `json:"dnsAddr"`
 	ClaimMap             map[string]string `json:"claimMap"`
 }
 
 type ProviderConfig struct {
-	IssuerUrl    string   `json:"issuerUrl"`
+	IssuerURL    string   `json:"issuerUrl"`
 	ClientID     string   `json:"clientID"`
 	ClientSecret string   `json:"clientSecret"`
 	Scopes       []string `json:"scopes"`
@@ -40,8 +40,8 @@ type EndpointConfig struct {
 }
 
 func (c *Config) Init() {
-	if c.DnsAddr == "" {
-		c.DnsAddr = "1.1.1.1:53"
+	if c.DNSAddr == "" {
+		c.DNSAddr = "1.1.1.1:53"
 	}
 	if c.Endpoint.Callback == "" {
 		c.Endpoint.Callback = "/oauth2/callback"
@@ -62,7 +62,7 @@ func (c *Config) Init() {
 		c.Cookie.OriginPath = "__oidc_origin_path"
 	}
 	if c.TokenAutoRefreshTime == 0 {
-		c.TokenAutoRefreshTime = time.Minute * 5 // 5 minutes
+		c.TokenAutoRefreshTime = time.Minute * 5 //nolint:mnd
 	}
 	if c.Totp.Period == 0 {
 		c.Totp.Period = 30
@@ -76,7 +76,7 @@ func (c *Config) Init() {
 }
 
 func (c *Config) Validate() error {
-	if c.Provider.IssuerUrl == "" {
+	if c.Provider.IssuerURL == "" {
 		return errors.New("provider.issuerUrl is required")
 	}
 	if c.Provider.ClientID == "" {
