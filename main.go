@@ -24,21 +24,20 @@ import (
 )
 
 func main() {
-	var config Config
+	config := NewConfig()
 	err := json.Unmarshal(handler.Host.GetConfig(), &config)
 	if err != nil {
 		handler.Host.Log(api.LogLevelError, fmt.Sprintf("Could not load config %v", err))
 		os.Exit(1)
 	}
 
-	config.Init()
 	err = config.Validate()
 	if err != nil {
 		handler.Host.Log(api.LogLevelError, fmt.Sprintf("Invalid config %v", err))
 		os.Exit(1)
 	}
 
-	mw, err := New(&config)
+	mw, err := New(config)
 	if err != nil {
 		handler.Host.Log(api.LogLevelError, fmt.Sprintf("Could not init plugin %v", err))
 		os.Exit(1)
@@ -54,6 +53,9 @@ type TraefikOIDCWasm struct {
 }
 
 func New(config *Config) (*TraefikOIDCWasm, error) {
+	if !config.Enable {
+		return &TraefikOIDCWasm{config: config}, nil
+	}
 	ctx := context.Background()
 	handler.Host.Log(api.LogLevelDebug, "initializing plugin")
 	defer handler.Host.Log(api.LogLevelDebug, "initialized plugin")
@@ -90,6 +92,9 @@ func New(config *Config) (*TraefikOIDCWasm, error) {
 }
 
 func (p *TraefikOIDCWasm) handleRequest(req api.Request, resp api.Response) (next bool, reqCtx uint32) {
+	if !p.config.Enable {
+		return true, 0
+	}
 	if handler.Host.LogEnabled(api.LogLevelDebug) {
 		handler.Host.Log(api.LogLevelDebug, "handle uri: "+req.GetURI())
 	}

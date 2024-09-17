@@ -9,8 +9,11 @@ import (
 	"github.com/pquerna/otp/totp"
 )
 
+type StringBoolean bool
+
 // Config the plugin configuration.
 type Config struct {
+	Enable               StringBoolean     `json:"enable"`
 	Provider             ProviderConfig    `json:"provider"`
 	Cookie               CookieConfig      `json:"cookie"`
 	Endpoint             EndpointConfig    `json:"endpoint"`
@@ -39,39 +42,28 @@ type EndpointConfig struct {
 	Fallback string `json:"fallback"`
 }
 
-func (c *Config) Init() {
-	if c.DNSAddr == "" {
-		c.DNSAddr = "1.1.1.1:53"
-	}
-	if c.Endpoint.Callback == "" {
-		c.Endpoint.Callback = "/oauth2/callback"
-	}
-	if c.Endpoint.Fallback == "" {
-		c.Endpoint.Fallback = "/"
-	}
-	if len(c.Provider.Scopes) == 0 {
-		c.Provider.Scopes = []string{oidc.ScopeOpenID}
-	}
-	if c.Cookie.AccessToken == "" {
-		c.Cookie.AccessToken = "__oidc_token"
-	}
-	if c.Cookie.RefreshToken == "" {
-		c.Cookie.RefreshToken = "__oidc_refresh_token"
-	}
-	if c.Cookie.OriginPath == "" {
-		c.Cookie.OriginPath = "__oidc_origin_path"
-	}
-	if c.TokenAutoRefreshTime == 0 {
-		c.TokenAutoRefreshTime = time.Minute * 5 //nolint:mnd
-	}
-	if c.Totp.Period == 0 {
-		c.Totp.Period = 30
-	}
-	if c.Totp.Digits == 0 {
-		c.Totp.Digits = otp.DigitsEight
-	}
-	if c.Totp.Algorithm == 0 {
-		c.Totp.Algorithm = otp.AlgorithmSHA1
+func NewConfig() *Config {
+	return &Config{
+		Enable: true,
+		Provider: ProviderConfig{
+			Scopes: []string{oidc.ScopeOpenID},
+		},
+		Cookie: CookieConfig{
+			AccessToken:  "__oidc_token",
+			RefreshToken: "__oidc_refresh_token",
+			OriginPath:   "__oidc_origin_path",
+		},
+		Endpoint: EndpointConfig{
+			Callback: "/oauth2/callback",
+			Fallback: "/",
+		},
+		Totp: totp.ValidateOpts{
+			Period:    30, //nolint:mnd
+			Digits:    otp.DigitsEight,
+			Algorithm: otp.AlgorithmSHA1,
+		},
+		DNSAddr:              "1.1.1.1:53",
+		TokenAutoRefreshTime: time.Minute * 5, //nolint:mnd
 	}
 }
 
@@ -96,5 +88,21 @@ func (c *Config) Validate() error {
 		return errors.New("provider.scopes must include 'openid'")
 	}
 
+	return nil
+}
+
+func (b *StringBoolean) UnmarshalJSON(data []byte) error {
+	switch string(data) {
+	case "true":
+		*b = true
+	case "false":
+		*b = false
+	case `"true"`:
+		*b = true
+	case `"false"`:
+		*b = false
+	default:
+		return errors.New("invalid boolean value")
+	}
 	return nil
 }

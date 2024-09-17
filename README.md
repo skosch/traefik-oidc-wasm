@@ -14,7 +14,7 @@ experimental:
   plugins:
     traefik-oidc:
       moduleName: "github.com/xzzpig/traefik-oidc-wasm"
-      version: "v0.0.1"
+      version: "v0.0.3"
 ```
 
 Add a middleware and reference it in a route.
@@ -63,6 +63,7 @@ http:
 | claimMap | no | `map[string]string` | *none* | key value pairs of claims to extract from the OIDC token and set as headers. |
 | dnsAddr | no | `string` | `"1.1.1.1:53"` | Address of the DNS server to use. (Because there is no default DNS resolver in WASM, this is required) |
 | tokenAutoRefreshTime | no | `time.Duration` | `5m` | The rest of time to auto refresh the token. |
+| enable | no | `bool` | `true` | Enable the plugin. |
 
 ### Provider Config
 | Name | Required | Type | Default | Description |

@@ -13,6 +13,7 @@ summary: "A Traefik Plugin for OpenID Connect Authentication"
 import: github.com/xzzpig/traefik-oidc-wasm
 
 testData:
+  enable: false
   provider:
     issuerUrl: "https://idm.example.com"
     clientID: your_client_id
