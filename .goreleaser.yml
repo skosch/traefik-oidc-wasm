@@ -2,7 +2,7 @@ project_name: traefik-oidc-wasm
 version: 2
 
 builds:
-  - binary: plugin.wasm
+  - binary: plugin
     gobinary: go
     no_unique_dist_dir: true
     main: .
