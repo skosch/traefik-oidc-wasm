@@ -1,0 +1,27 @@
+# The name of your plugin as displayed in the Plugins Catalog web UI.
+displayName: Traefik OIDC Authentication
+runtime: wasm
+# For now, `middleware` is the only type available.
+type: middleware
+# Medias associated to the plugin (optional)
+iconPath: .assets/icon.png
+
+# A brief description of what your plugin is doing.
+summary: "A Traefik Plugin for OpenID Connect Authentication"
+
+# The import path of your plugin.
+import: github.com/xzzpig/traefik-oidc-wasm
+
+testData:
+  provider:
+    issuerUrl: "https://idm.example.com"
+    clientID: your_client_id
+    clientSecret: your_client_secret
+    scopes: ["openid", "profile", "email", "groups"]
+  claimMap:
+    name: "X-Oidc-Name"
+    preferred_username: "X-Oidc-Username"
+    sub: "X-Oidc-Subject"
+    groups: "X-Oidc-Groups"
+  endpoint:
+    logout: "/oauth2/logout"
